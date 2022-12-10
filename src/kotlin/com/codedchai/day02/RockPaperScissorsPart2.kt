@@ -36,7 +36,7 @@ class RockPaperScissorsPart2 {
   fun calculateTotalScore() {
     var totalScore = 0
 
-    File("resources/day2/input.txt").forEachLine { line ->
+    File("resources/day02/input.txt").forEachLine { line ->
       val enemyCode = line[0]
       val myCode = line[2]
 

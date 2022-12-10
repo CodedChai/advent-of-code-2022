@@ -5,7 +5,7 @@ import java.io.File
 fun main() {
   var elfNumber = 1
   val elfToCalories = mutableMapOf(elfNumber to 0)
-  File("resources/day1/input.txt").forEachLine {
+  File("resources/day01/input.txt").forEachLine {
     val calories = it.toIntOrNull()
 
     if (calories == null) {
