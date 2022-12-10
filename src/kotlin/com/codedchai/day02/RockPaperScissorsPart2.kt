@@ -2,7 +2,7 @@ package com.codedchai.day02
 
 import java.io.File
 
-class RockPaperScissors {
+class RockPaperScissorsPart2 {
   val rock = Element(
     name = ElementName.ROCK,
     enemyCode = 'A',
