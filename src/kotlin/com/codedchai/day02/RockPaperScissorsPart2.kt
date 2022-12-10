@@ -8,20 +8,23 @@ class RockPaperScissorsPart2 {
     enemyCode = 'A',
     myCode = 'X',
     score = 1,
+    desiredOutcome = Outcome.LOSE
   )
 
   val paper = Element(
     name = ElementName.PAPER,
     enemyCode = 'B',
     myCode = 'Y',
-    score = 2
+    score = 2,
+    desiredOutcome = Outcome.DRAW
   )
 
   val scissors = Element(
     name = ElementName.SCISSORS,
     enemyCode = 'C',
     myCode = 'Z',
-    score = 3
+    score = 3,
+    desiredOutcome = Outcome.WIN
   )
 
   val elements = listOf(rock, paper, scissors)
@@ -38,11 +41,12 @@ class RockPaperScissorsPart2 {
       val myCode = line[2]
 
       val enemyElement = elements.first { it.enemyCode == enemyCode }
-      val myElement = elements.first { it.myCode == myCode }
+      val myOutcome = elements.first { it.myCode == myCode }
 
-      val roundScore = getElementScore(enemyElement.name, myElement.name)
+      val playedScore = getElementIShouldPlay(enemyElement.name, myOutcome.desiredOutcome)
+        .let { getElementScore(it) }
 
-      val playedScore = myElement.score
+      val roundScore = getOutcomeScore(myOutcome.desiredOutcome)
 
       totalScore += (roundScore + playedScore)
     }
@@ -50,17 +54,36 @@ class RockPaperScissorsPart2 {
     println(totalScore)
   }
 
-  fun getElementScore(enemyElement: ElementName, myElement: ElementName): Int {
+  fun getOutcomeScore(outcome: Outcome): Int {
+    return when (outcome) {
+      Outcome.WIN -> winScore
+      Outcome.LOSE -> loseScore
+      Outcome.DRAW -> drawScore
+    }
+  }
+
+  fun getElementScore(elementName: ElementName): Int {
+    return when (elementName) {
+      ElementName.ROCK -> 1
+      ElementName.PAPER -> 2
+      ElementName.SCISSORS -> 3
+    }
+  }
+
+  fun getElementIShouldPlay(enemyElement: ElementName, desiredOutcome: Outcome): ElementName {
     return when {
-      myElement == enemyElement -> drawScore
-      myElement == ElementName.ROCK && enemyElement == ElementName.SCISSORS -> winScore
-      myElement == ElementName.PAPER && enemyElement == ElementName.ROCK -> winScore
-      myElement == ElementName.SCISSORS && enemyElement == ElementName.PAPER -> winScore
-      else -> loseScore
+      desiredOutcome == Outcome.DRAW -> enemyElement
+      desiredOutcome == Outcome.WIN && enemyElement == ElementName.PAPER -> ElementName.SCISSORS
+      desiredOutcome == Outcome.WIN && enemyElement == ElementName.ROCK -> ElementName.PAPER
+      desiredOutcome == Outcome.WIN && enemyElement == ElementName.SCISSORS -> ElementName.ROCK
+      desiredOutcome == Outcome.LOSE && enemyElement == ElementName.SCISSORS -> ElementName.PAPER
+      desiredOutcome == Outcome.LOSE && enemyElement == ElementName.ROCK -> ElementName.SCISSORS
+      desiredOutcome == Outcome.LOSE && enemyElement == ElementName.PAPER -> ElementName.ROCK
+      else -> enemyElement
     }
   }
 }
 
 fun main() {
-  RockPaperScissors().calculateTotalScore()
+  RockPaperScissorsPart2().calculateTotalScore()
 }

@@ -4,5 +4,6 @@ data class Element(
   val name: ElementName,
   val enemyCode: Char,
   val myCode: Char,
-  val score: Int
+  val score: Int,
+  val desiredOutcome: Outcome = Outcome.DRAW
 )
