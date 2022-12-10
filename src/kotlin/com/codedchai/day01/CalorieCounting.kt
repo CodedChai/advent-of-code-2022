@@ -16,7 +16,7 @@ fun main() {
     }
   }
 
-  println(elfToCalories.values.sortedDescending())
+  println("Part 2 answer: " + elfToCalories.values.sortedDescending().take(3).sum())
   val answer = elfToCalories.values.max()
   println(answer)
 }
