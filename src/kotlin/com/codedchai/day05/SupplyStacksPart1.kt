@@ -24,10 +24,10 @@ class SupplyStacksPart1 {
     println("------------------------")
     val finalStack = allStackStates.last().toSortedMap()
     println(finalStack)
-    val answers = finalStack.map { (key, value) ->
+    val topLettersInOrder = finalStack.map { (key, value) ->
       value.first()
-    }
-    println(answers)
+    }.joinToString("")
+    println("Answer: $topLettersInOrder")
   }
 
   fun executeInstruction(instruction: Instruction, stacks: Map<Int, List<String>>): Map<Int, List<String>> {
