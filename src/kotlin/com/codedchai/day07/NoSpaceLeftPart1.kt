@@ -16,7 +16,7 @@ class NoSpaceLeftPart1 {
         s.isFile() && currentDirectory != null -> addFile(currentDirectory!!, s)
         s.isDir() && currentDirectory != null -> addDir(currentDirectory!!, s)
         else -> throw RuntimeException("Unidentified: $s")
-      }.also { println(it) }
+      }
       directoriesMap[currentDirectory!!.path] = currentDirectory!!
       // add all child dirs to this too
       currentDirectory!!.childDirectories.forEach {
@@ -24,7 +24,28 @@ class NoSpaceLeftPart1 {
       }
     }
 
+
+    val root = directoriesMap["/"]!!
+    setDirectorySizes(root)
+
     directoriesMap.toSortedMap().forEach { println(it) }
+
+    val answer = directoriesMap.filter { (_, dir) ->
+      dir.size!! <= 100000
+    }
+      .map { (_, dir) -> dir }
+      .sumOf { it.size!! }
+    println("-----------------")
+    println(answer)
+  }
+
+  // Sorry for the mutability
+  fun setDirectorySizes(directory: Directory): Int {
+    directory.size = directory.childDirectories.sumOf {
+      setDirectorySizes(it)
+    } + directory.files.sumOf { it.size }
+
+    return directory.size!!
   }
 
   fun addFile(currentDirectory: Directory, fileDetails: String): Directory {
@@ -110,6 +131,7 @@ data class Directory(
   val path: String,
   val files: MutableList<AdventFile> = mutableListOf(),
   val childDirectories: MutableList<Directory> = mutableListOf(),
+  var size: Int? = null
 )
 
 fun main() {
