@@ -2,7 +2,11 @@ package com.codedchai.day07
 
 import java.io.File
 
-class NoSpaceLeftPart1 {
+class NoSpaceLeft {
+
+  val maxSpace = 70000000
+  val requiredFreeSpace = maxSpace - 30000000
+
   fun findTotalDirSizeForDirsUnder100k() {
     val lines = File("resources/day07/input.txt").readLines()
 
@@ -37,6 +41,13 @@ class NoSpaceLeftPart1 {
       .sumOf { it.size!! }
     println("-----------------")
     println(answer)
+
+    println("--------------------------------")
+    println("part2")
+    val spaceUsed = root.size!!
+    val spaceNeededToDelete = spaceUsed - requiredFreeSpace
+    val minDirToDelete = directoriesMap.filter { (_, dir) -> dir.size!! > spaceNeededToDelete }.map { (_, dir) -> dir.size!! }.min()
+    println(minDirToDelete)
   }
 
   // Sorry for the mutability
@@ -135,5 +146,5 @@ data class Directory(
 )
 
 fun main() {
-  NoSpaceLeftPart1().findTotalDirSizeForDirsUnder100k()
+  NoSpaceLeft().findTotalDirSizeForDirsUnder100k()
 }
