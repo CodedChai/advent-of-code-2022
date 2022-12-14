@@ -56,19 +56,6 @@ class TreehousePart1 {
   }
 }
 
-enum class Direction {
-  FROM_BOTTOM,
-  FROM_TOP,
-  FROM_LEFT,
-  FROM_RIGHT
-}
-
-data class Coordinates(
-  val rowPos: Int,
-  val colPos: Int,
-  val direction: Direction
-)
-
 fun main() {
   TreehousePart1().buildGrid()
 }
