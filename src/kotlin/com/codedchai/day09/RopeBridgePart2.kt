@@ -2,30 +2,34 @@ package com.codedchai.day09
 
 import java.io.File
 
-class RopeBridgePart1 {
+class RopeBridgePart2 {
   fun calculateUniqueTailPositions() {
     val lines = File("resources/day09/input.txt").readLines()
-    var head = Coordinates(0, 0)
-    var tail = Coordinates(0, 0)
-    val uniqueTailLocations = hashSetOf(tail)
+    val rope = (0..9).map { Coordinates(0, 0) }.toMutableList()
+    val uniqueTailLocations = hashSetOf(rope.last())
 
     lines.forEach { line ->
       println(line)
       println("------------------")
       val numToMove = numberToMove(line)
       repeat(numToMove) {
-        head = moveOne(head, line)
-        tail = moveTailToHead(head, tail)
-        println("Head: $head")
-        println("Tail: $tail")
-        uniqueTailLocations.add(tail)
+        for (index in 0 until rope.size) {
+          if (index == 0) {
+            rope[0] = moveOne(rope.first(), line)
+            continue
+          }
+          rope[index] = moveSecondKnotTowardsFirstKnot(rope[index - 1], rope[index])
+          if (index == rope.size - 1) {
+            uniqueTailLocations.add(rope[index])
+          }
+        }
       }
     }
 
     println(uniqueTailLocations.size)
   }
 
-  fun moveTailToHead(head: Coordinates, tail: Coordinates): Coordinates {
+  fun moveSecondKnotTowardsFirstKnot(head: Coordinates, tail: Coordinates): Coordinates {
     if (tail.isTouching(head)) {
       return tail
     }
@@ -52,5 +56,5 @@ class RopeBridgePart1 {
 }
 
 fun main() {
-  RopeBridgePart1().calculateUniqueTailPositions()
+  RopeBridgePart2().calculateUniqueTailPositions()
 }
