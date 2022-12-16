@@ -1,11 +1,9 @@
 package com.codedchai.day11
 
 import java.io.File
-import java.math.BigDecimal
 import java.math.BigInteger
-import kotlin.math.floor
 
-class MonkeyBusinessPart1 {
+class MonkeyBusinessPart2 {
   fun process() {
     val monkeys = File("resources/day11/input.txt").readLines().chunked(7).mapNotNull { monkeyData ->
       buildMonkey(monkeyData)
@@ -15,9 +13,9 @@ class MonkeyBusinessPart1 {
 
     monkeys.forEach { println(it) }
 
-    val monkeyInspectionCount = mutableMapOf<Int, Int>()
+    val monkeyInspectionCount = mutableMapOf<Int, Long>()
 
-    for (round in 1..20) {
+    for (round in 1..10_000) {
       for (turnCounter in monkeys.indices) {
         val currentMonkey = monkeyMap[turnCounter]!!
         monkeyInspectionCount[currentMonkey.id] = (monkeyInspectionCount[currentMonkey.id] ?: 0) + currentMonkey.items.count()
@@ -25,15 +23,31 @@ class MonkeyBusinessPart1 {
         monkeyMap[turnCounter] = currentMonkey.removeItems()
         monkeyMap[newItemsToTrue.newId] = monkeyMap[newItemsToTrue.newId]!!.addItems(newItemsToTrue.items)
         monkeyMap[newItemsToFalse.newId] = monkeyMap[newItemsToFalse.newId]!!.addItems(newItemsToFalse.items)
+        val managedStress = manageStress(monkeyMap.values.toList())
+        managedStress.forEach { monkey ->
+          monkeyMap[monkey.id] = monkey
+        }
       }
-      println("Round: $round")
-      monkeyMap.forEach { (_, monkey) -> println(monkey) }
-      println("----------------------------------------------")
+      if (round in hashSetOf(1, 20, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000)) {
+        println("Round: $round")
+        println("Inspection counts: $monkeyInspectionCount")
+      }
     }
 
     println("Inspection counts: $monkeyInspectionCount")
     val amountOfMonkeyBusiness = monkeyInspectionCount.map { (_, inspectionCount) -> inspectionCount }.sortedDescending().take(2).reduceRight { a, b -> a * b }
     println("Total monkey business: $amountOfMonkeyBusiness")
+  }
+
+  fun lcm(a: Long, b: Long) = a * b
+
+  fun manageStress(monkeys: List<Monkey>): List<Monkey> {
+    val divisors = monkeys.map { it.testDivisbleBy.toLong() }
+    val lcm = divisors.reduce { a, b -> lcm(a, b) }
+
+    return monkeys.map { monkey ->
+      monkey.copy(items = monkey.items.map { it % lcm.toBigInteger() })
+    }
   }
 
   fun buildMonkey(monkeyData: List<String>): Monkey? {
@@ -62,12 +76,12 @@ class MonkeyBusinessPart1 {
 
     return if (split.last().equals("old", true)) {
       fun(old: BigInteger): BigInteger {
-        return floor(operator(old, old).toBigDecimal().div(BigDecimal(3.0)).toDouble()).toLong().toBigInteger()
+        return operator(old, old)
       }
     } else {
       val num = split.last().toBigInteger()
       fun(old: BigInteger): BigInteger {
-        return floor(operator(old, num).toBigDecimal().div(BigDecimal(3.0)).toDouble()).toLong().toBigInteger()
+        return operator(old, num)
       }
     }
   }
@@ -78,5 +92,5 @@ class MonkeyBusinessPart1 {
 }
 
 fun main() {
-  MonkeyBusinessPart1().process()
+  MonkeyBusinessPart2().process()
 }
