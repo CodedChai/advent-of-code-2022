@@ -8,8 +8,7 @@ class HillClimbingPart1 {
     val grid = File("resources/day12/input.txt").readLines().map { line ->
       line.toCharArray().map { it.code }
     }
-
-
+    
     grid.forEach {
       println(it)
     }
@@ -36,11 +35,6 @@ class HillClimbingPart1 {
     return this[coordinates.rowPos][coordinates.colPos]
   }
 
-  data class Node(
-    val coordinates: Coordinates,
-    val value: Int,
-    val parent: Node? = null
-  )
 
   fun searchBfsBacktracking(grid: List<List<Int>>): Int {
     val startingCoordinates = getStartingCoordinates(grid, 'S')
@@ -168,18 +162,6 @@ class HillClimbingPart1 {
     viablePaths.forEach {
       println("Viable path of length: ${it.path.size}")
     }
-  }
-
-  fun <T> List<T>.startsWith(other: List<T>): Boolean {
-    if (other.size > this.size) {
-      return false
-    }
-
-    var matches = false
-    other.forEachIndexed { index, value ->
-      matches = (this[index] == value || matches)
-    }
-    return matches
   }
 
   fun search(grid: List<List<Int>>): Set<Coordinates> {
