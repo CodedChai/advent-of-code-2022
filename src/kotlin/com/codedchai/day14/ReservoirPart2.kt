@@ -3,9 +3,9 @@ package com.codedchai.day14
 import com.codedchai.day12.Coordinates
 import java.io.File
 
-class ReservoirPart1 {
+class ReservoirPart2 {
 
-  fun process() {
+  fun process(heightFromFloor: Int) {
     val textLines = File("resources/day14/input.txt").readLines()
 
     val rockLocations = textLines.flatMap { textLine ->
@@ -15,13 +15,19 @@ class ReservoirPart1 {
       }
     }
 
-    val maxY = rockLocations.maxOf { it.rowPos }
-    val minX = rockLocations.minOf { it.colPos }
-    val maxX = rockLocations.maxOf { it.colPos }
-    val tileGrid = initializeTileGrid(maxY, maxX)
+    val maxY = rockLocations.maxOf { it.rowPos } + heightFromFloor
+    var minX = rockLocations.minOf { it.colPos }
+    var maxX = rockLocations.maxOf { it.colPos }
+    val tileGrid = initializeTileGrid(maxY, maxX * 2) // just make the grid really big
 
     rockLocations.forEach {
       tileGrid[it.rowPos][it.colPos] = Tile.ROCK
+    }
+
+    if (heightFromFloor > 0) {
+      tileGrid[maxY].indices.forEach { xPos ->
+        tileGrid[maxY][xPos] = Tile.ROCK
+      }
     }
 
     val sandStartingPosition = Coordinates(0, 500)
@@ -31,10 +37,12 @@ class ReservoirPart1 {
       val restingSpot = findSandRestingSpot(sandStartingPosition, tileGrid, maxY)
       restingSpot?.also {
         tileGrid[restingSpot.rowPos][restingSpot.colPos] = Tile.SAND
+        minX = minOf(restingSpot.colPos, minX)
+        maxX = maxOf(restingSpot.colPos, maxX)
         totalSandParticles++
       }
 
-      if (restingSpot == sandStartingPosition || restingSpot == null) {
+      if (restingSpot == sandStartingPosition) {
         break
       }
     }
@@ -94,9 +102,8 @@ class ReservoirPart1 {
       Tile.AIR
     }
   }.map { it.toMutableList() }.toMutableList()
-
 }
 
 fun main() {
-  ReservoirPart1().process()
+  ReservoirPart2().process(2)
 }
