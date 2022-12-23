@@ -1,19 +1,23 @@
 plugins {
-    kotlin("jvm") version "1.7.22"
+  kotlin("jvm") version "1.7.22"
+}
+
+dependencies {
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 }
 
 repositories {
-    mavenCentral()
+  mavenCentral()
 }
 
 tasks {
-    sourceSets {
-        main {
-            java.srcDirs("src")
-        }
+  sourceSets {
+    main {
+      java.srcDirs("src")
     }
+  }
 
-    wrapper {
-        gradleVersion = "7.6"
-    }
+  wrapper {
+    gradleVersion = "7.6"
+  }
 }
