@@ -14,7 +14,11 @@ class ReservoirPart1 {
         createLinePoints(it.first, it.second)
       }
     }
-    val tileGrid = initializeTileGrid(1000)
+
+    val maxY = rockLocations.maxOf { it.rowPos }
+    val minX = rockLocations.minOf { it.colPos }
+    val maxX = rockLocations.maxOf { it.colPos }
+    val tileGrid = initializeTileGrid(maxY, maxX)
 
     rockLocations.forEach {
       tileGrid[it.rowPos][it.colPos] = Tile.ROCK
@@ -22,10 +26,9 @@ class ReservoirPart1 {
 
     val sandStartingPosition = Coordinates(0, 500)
 
-
     var totalSandParticles = 0
     while (true) {
-      val restingSpot = findSandRestingSpot(sandStartingPosition, tileGrid)
+      val restingSpot = findSandRestingSpot(sandStartingPosition, tileGrid, maxY)
       restingSpot?.also {
         tileGrid[restingSpot.rowPos][restingSpot.colPos] = Tile.SAND
         totalSandParticles++
@@ -36,42 +39,31 @@ class ReservoirPart1 {
       }
     }
 
-    (0..9).forEach { y ->
+    (0..maxY).forEach { y ->
       println()
-      (494..503).forEach { x ->
+      (minX..maxX).forEach { x ->
         print(tileGrid[y][x].char)
       }
     }
+    println()
 
     println("Sand particles: $totalSandParticles")
   }
 
-  fun findSandRestingSpot(sandPosition: Coordinates, tileGrid: List<List<Tile>>): Coordinates? {
+  fun findSandRestingSpot(sandPosition: Coordinates, tileGrid: List<List<Tile>>, maxY: Int): Coordinates? {
+    if (maxY <= sandPosition.rowPos) {
+      return null
+    }
 
-    // TODO: These checks need to be for if we are outside the bounds of all of our lines
-    val canFallDown = if (tileGrid.size == sandPosition.rowPos + 1) {
-      null
-    } else {
-      tileGrid[sandPosition.rowPos + 1][sandPosition.colPos] == Tile.AIR
-    }
-    val canFallDownLeft = if (tileGrid.size == sandPosition.rowPos + 1 || sandPosition.colPos - 1 < 0) {
-      null
-    } else {
-      tileGrid[sandPosition.rowPos + 1][sandPosition.colPos - 1] == Tile.AIR
-    }
-    val canFallDownRight = if (tileGrid.size == sandPosition.rowPos + 1 || tileGrid[0].size == sandPosition.colPos + 1) {
-      null
-    } else {
-      tileGrid[sandPosition.rowPos + 1][sandPosition.colPos + 1] == Tile.AIR
-    }
+    val canFallDown = tileGrid[sandPosition.rowPos + 1][sandPosition.colPos] == Tile.AIR
+    val canFallDownLeft = tileGrid[sandPosition.rowPos + 1][sandPosition.colPos - 1] == Tile.AIR
+    val canFallDownRight = tileGrid[sandPosition.rowPos + 1][sandPosition.colPos + 1] == Tile.AIR
 
     return when {
-      canFallDown == true -> findSandRestingSpot(sandPosition.copy(rowPos = sandPosition.rowPos + 1), tileGrid)
-      canFallDownLeft == true -> findSandRestingSpot(sandPosition.copy(rowPos = sandPosition.rowPos + 1, colPos = sandPosition.colPos - 1), tileGrid)
-      canFallDownRight == true -> findSandRestingSpot(sandPosition.copy(rowPos = sandPosition.rowPos + 1, colPos = sandPosition.colPos + 1), tileGrid)
-      canFallDown == null -> null
-      canFallDownLeft == null -> null
-      canFallDownRight == null -> null
+      canFallDown -> findSandRestingSpot(sandPosition.copy(rowPos = sandPosition.rowPos + 1), tileGrid, maxY)
+      canFallDownLeft -> findSandRestingSpot(sandPosition.copy(rowPos = sandPosition.rowPos + 1, colPos = sandPosition.colPos - 1), tileGrid, maxY)
+      canFallDownRight -> findSandRestingSpot(sandPosition.copy(rowPos = sandPosition.rowPos + 1, colPos = sandPosition.colPos + 1), tileGrid, maxY)
+
       else -> sandPosition
     }
   }
@@ -97,8 +89,8 @@ class ReservoirPart1 {
     }
   }
 
-  private fun initializeTileGrid(maxSize: Int) = (0..9).map { y ->
-    (0..maxSize).map { x ->
+  private fun initializeTileGrid(maxY: Int, maxX: Int) = (0..maxY).map { y ->
+    (0..maxX).map { x ->
       Tile.AIR
     }
   }.map { it.toMutableList() }.toMutableList()
