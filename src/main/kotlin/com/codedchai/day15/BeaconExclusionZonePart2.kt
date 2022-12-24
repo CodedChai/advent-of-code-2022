@@ -1,30 +1,36 @@
 package com.codedchai.day15
 
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class BeaconExclusionZonePart2 {
   suspend fun findBeaconTuningFrequency(maxValue: Long) {
     val lines = File("resources/day15/input.txt").readLines()
-
     val beacons = lines.map { buildDiamond(it) }
-
-    val searchPoints = (0..maxValue).flatMap { xPosition ->
-      (0..maxValue).map { yPosition ->
-        Point(xPosition, yPosition)
-      }
-    }
-
     var beaconLocation: Point? = null
-    coroutineScope {
-      for (searchPoint in searchPoints) {
+
+    withContext(Dispatchers.Default.limitedParallelism(4)) {
+      for (xPosition in (0..maxValue).reversed()) {
         launch {
-          if (beacons.none { it.contains(searchPoint) }) {
-            beaconLocation = searchPoint
+          val beaconRangeForCol = beacons
+            .mapNotNull { it.colRange(xPosition, maxValue) }
+
+          val combinedRanges = combineRanges(beaconRangeForCol)
+
+          if (combinedRanges.size > 1) {
+            for (yPosition in 0..maxValue) {
+              if (beaconRangeForCol.any { it.contains(yPosition) }) {
+                continue
+              }
+              val searchPoint = Point(xPosition, yPosition)
+              println(searchPoint)
+              beaconLocation = searchPoint
+              break
+            }
           }
         }
-
         if (beaconLocation != null) {
           break
         }
@@ -32,10 +38,36 @@ class BeaconExclusionZonePart2 {
     }
 
     println(beaconLocation)
-
     println(getTuningFrequency(beaconLocation!!))
+  }
 
-    //visualizeBeacons(beacons)
+  fun combineRanges(ranges: List<LongRange>): List<LongRange> {
+    val rangeQueue = ranges.sortedBy { it.first }.toMutableList()
+
+    val mergedRanges = mutableListOf(rangeQueue.removeFirst())
+
+    for (currRange in rangeQueue) {
+      val lastMergedRange = mergedRanges.last()
+      if (currRange.first <= lastMergedRange.last || lastMergedRange.last + 1 == currRange.first) {
+        val combinedRange = combineRange(currRange, lastMergedRange)
+        val lastIndex = mergedRanges.size - 1
+        mergedRanges[lastIndex] = combinedRange
+      } else {
+        mergedRanges.add(currRange)
+      }
+    }
+
+    return mergedRanges
+  }
+
+  fun rangesOverlap(range1: LongRange, range2: LongRange): Boolean {
+    return range1.first in range2 || range1.last in range2 || range2.first in range1 || range2.last in range2
+  }
+
+  fun combineRange(range1: LongRange, range2: LongRange): LongRange {
+    val start = minOf(range1.last, range2.last)
+    val end = maxOf(range1.last, range2.last)
+    return start..end
   }
 
   fun getTuningFrequency(point: Point): Long {
