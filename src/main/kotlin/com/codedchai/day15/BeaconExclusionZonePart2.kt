@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.system.measureTimeMillis
 
 class BeaconExclusionZonePart2 {
   suspend fun findBeaconTuningFrequency(maxValue: Long) {
@@ -11,31 +12,33 @@ class BeaconExclusionZonePart2 {
     val beacons = lines.map { buildDiamond(it) }
     var beaconLocation: Point? = null
 
-    withContext(Dispatchers.Default.limitedParallelism(4)) {
-      for (xPosition in (0..maxValue).reversed()) {
-        launch {
-          val beaconRangeForCol = beacons
-            .mapNotNull { it.colRange(xPosition, maxValue) }
+    val timeToCalculate = measureTimeMillis {
+      withContext(Dispatchers.Default) {
+        for (xPosition in (0..maxValue).reversed()) {
+          launch {
+            val beaconRangeForCol = beacons
+              .mapNotNull { it.colRange(xPosition, maxValue) }
 
-          val combinedRanges = combineRanges(beaconRangeForCol)
+            val combinedRanges = combineRanges(beaconRangeForCol)
 
-          if (combinedRanges.size > 1) {
-            for (yPosition in 0..maxValue) {
-              if (beaconRangeForCol.any { it.contains(yPosition) }) {
-                continue
+            if (combinedRanges.size > 1) {
+              for (yPosition in 0..maxValue) {
+                if (beaconRangeForCol.any { it.contains(yPosition) }) {
+                  continue
+                }
+                val searchPoint = Point(xPosition, yPosition)
+                beaconLocation = searchPoint
+                break
               }
-              val searchPoint = Point(xPosition, yPosition)
-              println(searchPoint)
-              beaconLocation = searchPoint
-              break
             }
           }
-        }
-        if (beaconLocation != null) {
-          break
+          if (beaconLocation != null) {
+            break
+          }
         }
       }
     }
+    println("Time to process: $timeToCalculate ms")
 
     println(beaconLocation)
     println(getTuningFrequency(beaconLocation!!))
@@ -58,10 +61,6 @@ class BeaconExclusionZonePart2 {
     }
 
     return mergedRanges
-  }
-
-  fun rangesOverlap(range1: LongRange, range2: LongRange): Boolean {
-    return range1.first in range2 || range1.last in range2 || range2.first in range1 || range2.last in range2
   }
 
   fun combineRange(range1: LongRange, range2: LongRange): LongRange {
