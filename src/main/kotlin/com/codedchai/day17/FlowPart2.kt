@@ -3,7 +3,7 @@ package com.codedchai.day17
 import com.codedchai.day12.Coordinates
 import java.io.File
 
-class FlowPart1 {
+class FlowPart2 {
   fun simulatePyroclasticFlow() {
     val jetDirections = File("resources/day17/input.txt").readLines().first().map { it.toJetDirection() }
 
@@ -184,7 +184,17 @@ class FlowPart1 {
   }
 }
 
-
 fun main() {
-  FlowPart1().simulatePyroclasticFlow()
+  FlowPart2().simulatePyroclasticFlow()
 }
+
+data class Key(
+  val pieceCount: Int,
+  val jetCount: Int
+)
+
+data class CachedValue(
+  val timesSeen: Int,
+  val piecesSeen: Long,
+  val currentTop: Long
+)
