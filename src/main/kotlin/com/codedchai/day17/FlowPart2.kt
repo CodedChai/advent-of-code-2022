@@ -8,13 +8,16 @@ class FlowPart2 {
     val jetDirections = File("resources/day17/input.txt").readLines().first().map { it.toJetDirection() }
 
     val finalRestingPlaceRockPoints = hashSetOf<Coordinates>()
+    val seen = hashMapOf<Key, CachedValue>()
 
+    val numberOfRocksToSimulate = 1000000000000
     var jetDirectionIndex = 0
-    var numberOfFinalRestingPoints = 0L
-    while (numberOfFinalRestingPoints < 2022) {
+    var numberOfFinalRestingRocks = 0L
+    var addedByRepeats = 0L
+    while (numberOfFinalRestingRocks < numberOfRocksToSimulate) {
       var rockMovementNumber = 0
       val minimumHeight = getHeight(finalRestingPlaceRockPoints) + 3
-      var currentRock = buildRockShape(numberOfFinalRestingPoints, minimumHeight)
+      var currentRock = buildRockShape(numberOfFinalRestingRocks, minimumHeight)
 
       while (true) {
         val directionToMove = if (rockMovementNumber % 2 == 0) {
@@ -37,12 +40,35 @@ class FlowPart2 {
         }
       }
       finalRestingPlaceRockPoints.addAll(currentRock.points)
-      numberOfFinalRestingPoints++
+      numberOfFinalRestingRocks++
+      val key = Key((numberOfFinalRestingRocks % 5).toInt(), jetDirectionIndex)
+      val cachedValue = seen[key]
+      if (addedByRepeats == 0L && cachedValue?.timesSeen == 2) {
+        val deltaHeight = getHeight(finalRestingPlaceRockPoints) - cachedValue.currentHeight
+        val deltaRestingRocks = numberOfFinalRestingRocks - cachedValue.rocksSeen
+        val numberOfRepeatsToCalculate = (numberOfRocksToSimulate - numberOfFinalRestingRocks) / deltaRestingRocks
+        addedByRepeats += numberOfRepeatsToCalculate * deltaHeight
+        numberOfFinalRestingRocks += numberOfRepeatsToCalculate * deltaRestingRocks
+      }
+
+      val newCachedValue = cachedValue?.let {
+        it.copy(
+          timesSeen = it.timesSeen + 1,
+          currentHeight = getHeight(finalRestingPlaceRockPoints).toLong(),
+          rocksSeen = numberOfFinalRestingRocks
+        )
+      } ?: CachedValue(1, getHeight(finalRestingPlaceRockPoints).toLong(), numberOfFinalRestingRocks)
+
+      seen[key] = newCachedValue
     }
     val height = getHeight(finalRestingPlaceRockPoints)
 
-    visualizeRocks(finalRestingPlaceRockPoints)
-    println("Max height: $height")
+    // visualizeRocks(finalRestingPlaceRockPoints)
+    val maxTimesSeen = seen.values.maxOf { it.timesSeen }
+    println("Max times seen: $maxTimesSeen")
+    println("Repeats: $addedByRepeats")
+    println("Height calculated: $height")
+    println("Max height: ${height + addedByRepeats}")
   }
 
   fun visualizeRocks(finalPoints: Set<Coordinates>) {
@@ -189,12 +215,12 @@ fun main() {
 }
 
 data class Key(
-  val pieceCount: Int,
-  val jetCount: Int
+  val rockIndex: Int,
+  val jetIndex: Int
 )
 
 data class CachedValue(
   val timesSeen: Int,
-  val piecesSeen: Long,
-  val currentTop: Long
+  val rocksSeen: Long,
+  val currentHeight: Long
 )
