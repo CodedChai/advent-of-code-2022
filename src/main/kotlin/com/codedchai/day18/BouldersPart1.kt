@@ -29,23 +29,6 @@ class BouldersPart1 {
 
 }
 
-data class ThreeDPoint(
-  val x: Int,
-  val y: Int,
-  val z: Int
-) {
-  fun neighboringPoints(): List<ThreeDPoint> {
-    return listOf(
-      copy(x = x - 1),
-      copy(x = x + 1),
-      copy(y = y - 1),
-      copy(y = y + 1),
-      copy(z = z - 1),
-      copy(z = z + 1),
-    )
-  }
-}
-
 suspend fun main() {
   BouldersPart1().calculateSurfaceArea()
 }
