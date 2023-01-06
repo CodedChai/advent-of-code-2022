@@ -1,22 +1,43 @@
 package com.codedchai.day19
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import java.io.File
 
-class OreCollectingPart1 {
-  suspend fun getQualityLevel() = coroutineScope {
+class OreCollecting {
+
+  // To prevent memory issues just keep the number of parallel threads down
+  val limitedParallelism = Dispatchers.Default.limitedParallelism(3)
+
+  suspend fun getQualityLevelForPart1() = withContext(limitedParallelism) {
     val robotBlueprints = File("resources/day19/input.txt").readLines().map { parseBlueprint(it) }
 
-    // robotBlueprints.forEach { println(it) }
+    val quality = robotBlueprints.map {
+      async {
+        val geodeCount = getMaxGeodeBlueprintCanMine(it, 24)
+
+        println("${it.id} mines: $geodeCount geodes for a quality of ${geodeCount * it.id}")
+        geodeCount * it.id
+      }
+    }.awaitAll().sum()
+
+    println(quality)
+  }
+
+  suspend fun getQualityLevelForPart2() = coroutineScope {
+    val robotBlueprints = File("resources/day19/input.txt").readLines().map { parseBlueprint(it) }.take(3)
 
     val quality = robotBlueprints.map {
       // async {
-      val geodeCount = getMaxGeodeBlueprintCanMine(it, 24)
+      val geodeCount = getMaxGeodeBlueprintCanMine(it, 32)
 
-      println("${it.id} mines: $geodeCount geodes for a quality of ${geodeCount * it.id}")
-      geodeCount * it.id
-      //     }
-    }.sum()
+      println("${it.id} mines: $geodeCount")
+      geodeCount
+      // }
+    }.reduce { a, b -> a * b }
 
     println(quality)
   }
@@ -63,7 +84,7 @@ class OreCollectingPart1 {
       // 2. mine ore
       // 3. create robot
       // 4. Add state back to queue
-      var buildableRobots =
+      val buildableRobots =
         currentState.getBuildableRobots()
           .filterNot { bot ->
             isBuildingOreBotUnnecessary(bot, currentState, finalMinute, currentState.currentResources) ||
@@ -72,7 +93,6 @@ class OreCollectingPart1 {
           }
           .sortedByDescending { it.minesResource.ordinal } // Make the geodes first
 
-
       val minedResources = currentState.getResourcesMinedInAMinute()
 
       // new states where you either build each robot OR skip building the bots
@@ -80,21 +100,20 @@ class OreCollectingPart1 {
       // Only build bots if one of the resources go exactly to 0? 
       // Don't add a mine only option if you have more resources than the max bot costs?
 
-
       // If we can build a geode bot and two other types of bots then lets get rid of the phase where we dont build a bot
       val mineOnlyTurn =
-        if (buildableRobots.size >= 3 || buildableRobots.size >= 2 && buildableRobots.any { it.minesResource == ResourceType.GEODE }) {
+        if (buildableRobots.size >= 4 || buildableRobots.size >= 3 && buildableRobots.any { it.minesResource == ResourceType.GEODE }) {
           null
         } else {
           (minedResources to null)
         }
 
-      val possibleGeodeBot = buildableRobots.find { it.minesResource == ResourceType.GEODE }
-      val possibleObsidianBot = buildableRobots.find { it.minesResource == ResourceType.OBSIDIAN }
-
-      if (possibleGeodeBot == null && possibleObsidianBot != null) {
-        buildableRobots = listOf(possibleObsidianBot)
-      }
+//      val possibleGeodeBot = buildableRobots.find { it.minesResource == ResourceType.GEODE }
+//      val possibleObsidianBot = buildableRobots.find { it.minesResource == ResourceType.OBSIDIAN }
+//
+//      if (possibleGeodeBot == null && possibleObsidianBot != null) {
+//        buildableRobots = listOf(possibleObsidianBot)
+//      }
 
       val buildCostToRobots = (buildableRobots.map { buildableRobot ->
         addResourceMaps(currentState.resourceCostOfRobot(buildableRobot), minedResources) to buildableRobot
@@ -107,11 +126,18 @@ class OreCollectingPart1 {
       // Filter out anything where we know for a fact that we can't reach the same max
       val statesThatAreOkay = newStates.filterNot {
         (currentMax) > (it.currentResources[ResourceType.GEODE] ?: 0)
+      }.filterNot {
+        // spitball of getting rid of branches where we haven't made enough bots
+        // Not good enough.. getting heapspace errors
+        (it.minute == 10 && it.activeMiningBotTypes.size <= 3) ||
+          (it.minute == 15 && it.activeMiningBotTypes.size <= 5) ||
+          (it.minute == 20 && it.activeMiningBotTypes.size <= 7) ||
+          (it.minute == 25 && it.activeMiningBotTypes.size <= 10) ||
+          (it.minute == 30 && it.activeMiningBotTypes.size <= 12)
       }
 
       stack.addAll(statesThatAreOkay)
     }
-
 
     println("Total branches looked at: $totalbranchesLookedAt")
     return maxesAtMinutes[finalMinute]!!
@@ -262,5 +288,6 @@ enum class ResourceType {
 }
 
 suspend fun main() {
-  OreCollectingPart1().getQualityLevel()
+  // OreCollecting().getQualityLevelForPart1()
+  OreCollecting().getQualityLevelForPart2()
 }
