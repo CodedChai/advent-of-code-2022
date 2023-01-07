@@ -3,7 +3,6 @@ package com.codedchai.day19
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -27,7 +26,7 @@ class OreCollecting {
     println(quality)
   }
 
-  suspend fun getQualityLevelForPart2() = coroutineScope {
+  fun getQualityLevelForPart2() {
     val robotBlueprints = File("resources/day19/input.txt").readLines().map { parseBlueprint(it) }.take(3)
 
     val quality = robotBlueprints.map {
@@ -50,7 +49,8 @@ class OreCollecting {
       maxObsidianCost = blueprint.getMaxCost(ResourceType.OBSIDIAN),
     )
 
-    val stack = mutableListOf(initialState)
+    val stack = ArrayDeque<State>()
+    stack.add(initialState)
 
     val previousStates = hashSetOf(initialState)
     var totalbranchesLookedAt = 0
@@ -64,18 +64,19 @@ class OreCollecting {
       val minedGeodes = currentState.currentResources[ResourceType.GEODE] ?: 0
       val currentMax = maxesAtMinutes[currentState.minute] ?: 0
       maxesAtMinutes[currentState.minute] = maxOf(currentMax, minedGeodes)
-
+      if ((currentMax) > (currentState.currentResources[ResourceType.GEODE] ?: 0)) {
+        continue
+      }
 //      if (totalLookedAt % 100 == 0) {
 //        println(totalLookedAt)
 //        println(currentState)
 //      }
 
       if (currentState.minute >= finalMinute) {
-//        val minedGeodes = currentState.currentResources[ResourceType.GEODE] ?: 0
-//        if (minedGeodes > maxGeodesMined) {
-//          maxGeodesMined = maxOf(maxGeodesMined, minedGeodes)
-//          println(currentState)
-//        }
+        val minedGeodes = currentState.currentResources[ResourceType.GEODE] ?: 0
+        if (minedGeodes >= (maxesAtMinutes[finalMinute] ?: 0)) {
+          stack.removeIf { (maxesAtMinutes[it.minute]!! - 1) > (it.currentResources[ResourceType.GEODE] ?: 0) }
+        }
         continue
       }
 
@@ -84,14 +85,24 @@ class OreCollecting {
       // 2. mine ore
       // 3. create robot
       // 4. Add state back to queue
-      val buildableRobots =
+
+      val buildableRobots = if (currentState.minute >= (finalMinute - 1)) {
+        // no need to make bots on last round
+        emptyList()
+      } else {
+
         currentState.getBuildableRobots()
           .filterNot { bot ->
             isBuildingOreBotUnnecessary(bot, currentState, finalMinute, currentState.currentResources) ||
               isBuildingClayBotUnnecessary(bot, currentState, finalMinute, currentState.currentResources) ||
-              isBuildingObsidianBotUnnecessary(bot, currentState, finalMinute, currentState.currentResources)
+              isBuildingObsidianBotUnnecessary(bot, currentState, finalMinute, currentState.currentResources) ||
+              isBuildingOreBotUnnecessary(bot, currentState) ||
+              isBuildingClayBotUnnecessary(bot, currentState) ||
+              isBuildingObsidianBotUnnecessary(bot, currentState)
           }
           .sortedByDescending { it.minesResource.ordinal } // Make the geodes first
+      }
+
 
       val minedResources = currentState.getResourcesMinedInAMinute()
 
@@ -102,7 +113,7 @@ class OreCollecting {
 
       // If we can build a geode bot and two other types of bots then lets get rid of the phase where we dont build a bot
       val mineOnlyTurn =
-        if (buildableRobots.size >= 4 || buildableRobots.size >= 3 && buildableRobots.any { it.minesResource == ResourceType.GEODE }) {
+        if (buildableRobots.size >= 3 || buildableRobots.size >= 2 && buildableRobots.any { it.minesResource == ResourceType.GEODE }) {
           null
         } else {
           (minedResources to null)
@@ -130,8 +141,9 @@ class OreCollecting {
         // spitball of getting rid of branches where we haven't made enough bots
         // Not good enough.. getting heapspace errors
         (it.minute == 10 && it.activeMiningBotTypes.size <= 3) ||
-          (it.minute == 15 && it.activeMiningBotTypes.size <= 5) ||
-          (it.minute == 20 && it.activeMiningBotTypes.size <= 7) ||
+          (it.minute == 14 && it.activeMiningBotTypes.size <= 5) ||
+          (it.minute == 16 && it.activeMiningBotTypes.size <= 6) ||
+          (it.minute == 18 && it.activeMiningBotTypes.size <= 7) ||
           (it.minute == 25 && it.activeMiningBotTypes.size <= 10) ||
           (it.minute == 30 && it.activeMiningBotTypes.size <= 12)
       }
@@ -180,6 +192,31 @@ class OreCollecting {
     return bot.minesResource == ResourceType.ORE && deltaMinutes *
       currentState.maxOreCost <= resources[ResourceType.ORE]!! +
       (deltaMinutes * currentState.activeMiningBotTypes.filter { it == ResourceType.ORE }.size)
+  }
+
+  private fun isBuildingObsidianBotUnnecessary(
+    bot: MiningBot,
+    currentState: State,
+  ): Boolean {
+
+    return bot.minesResource == ResourceType.OBSIDIAN &&
+      currentState.maxObsidianCost <= currentState.activeMiningBotTypes.filter { it == ResourceType.OBSIDIAN }.size
+  }
+
+  private fun isBuildingClayBotUnnecessary(
+    bot: MiningBot,
+    currentState: State,
+  ): Boolean {
+    return bot.minesResource == ResourceType.CLAY &&
+      currentState.maxClayCost <= currentState.activeMiningBotTypes.filter { it == ResourceType.CLAY }.size
+  }
+
+  private fun isBuildingOreBotUnnecessary(
+    bot: MiningBot,
+    currentState: State,
+  ): Boolean {
+    return bot.minesResource == ResourceType.ORE &&
+      currentState.maxOreCost <= currentState.activeMiningBotTypes.filter { it == ResourceType.ORE }.size
   }
 
   fun parseBlueprint(blueprint: String): Blueprint {
@@ -231,9 +268,9 @@ data class State(
   val maxObsidianCost: Int
 ) {
 
-  fun step(resourceChanges: Map<ResourceType, Int>, newActivingMiningBotType: ResourceType? = null): State {
+  fun step(resourceChanges: Map<ResourceType, Int>, newActiveMiningBotType: ResourceType? = null): State {
 
-    val activeBotsList = activeMiningBotTypes + listOfNotNull(newActivingMiningBotType)
+    val activeBotsList = activeMiningBotTypes + listOfNotNull(newActiveMiningBotType)
     val newResources = addResourceMaps(currentResources, resourceChanges)
     return copy(
       activeMiningBotTypes = activeBotsList,
@@ -287,7 +324,7 @@ enum class ResourceType {
   GEODE
 }
 
-suspend fun main() {
-  // OreCollecting().getQualityLevelForPart1()
+fun main() {
+  //OreCollecting().getQualityLevelForPart1()
   OreCollecting().getQualityLevelForPart2()
 }
