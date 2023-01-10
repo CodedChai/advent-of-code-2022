@@ -15,6 +15,7 @@ class MonkeyMathPart1 {
 
   fun calculateValueOfMonkey(monkey: Monkey, monkeyMap: Map<String, Monkey>): Long {
     return when (monkey) {
+      is Monkey.Human -> throw Error("Should only be in part 2")
       is Monkey.YellingMonkey -> monkey.number
       is Monkey.JobMonkey -> {
         val leftMonkeyValue = calculateValueOfMonkey(monkeyMap[monkey.leftMonkeyName]!!, monkeyMap)
@@ -64,29 +65,6 @@ class MonkeyMathPart1 {
     OperatorFunction.TIMES -> Long::times
     OperatorFunction.DIV -> Long::div
   }
-}
-
-enum class OperatorFunction {
-  PLUS,
-  MINUS,
-  TIMES,
-  DIV
-}
-
-sealed class Monkey {
-  abstract val name: String
-
-  data class JobMonkey(
-    override val name: String,
-    val leftMonkeyName: String,
-    val rightMonkeyName: String,
-    val operatorFun: OperatorFunction
-  ) : Monkey()
-
-  data class YellingMonkey(
-    override val name: String,
-    val number: Long
-  ) : Monkey()
 }
 
 fun main() {
