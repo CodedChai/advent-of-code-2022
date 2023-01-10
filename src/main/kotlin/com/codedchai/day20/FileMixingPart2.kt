@@ -4,7 +4,6 @@ import java.io.File
 
 class FileMixingPart2 {
   fun decryptFileByMixing() {
-
     val startingList = File("resources/day20/input.txt").readLines().map { it.toInt() }
 
     println(startingList)
